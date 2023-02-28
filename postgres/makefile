@@ -5,7 +5,7 @@ host-port := 54321
 .PHONY: run stop rm clean image
 
 run: image
-	docker run --name $(container-name) -p $(host-port):5432 -e POSTGRES_HOST_AUTH_METHOD=trust -d $(image-name)
+	docker run --name $(container-name) -p $(host-port):5432 -d $(image-name)
 
 image:
 	docker build -t $(image-name) .

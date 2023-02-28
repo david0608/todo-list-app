@@ -4,6 +4,6 @@
   "port": 54321,
   "username": "postgres",
   "database": "todo_list_app",
-  "migrations": ["dist/src/migrations/*{.ts,.js}"],
+  "migrations": ["dist/migrations/*{.ts,.js}"],
   "migrationsRun": true
 }
