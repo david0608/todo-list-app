@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './modules/app.module';
+import { ResponseInterceptor } from './interceptors/response/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,11 +14,13 @@ async function bootstrap() {
     }),
   );
 
+  app.useGlobalInterceptors(new ResponseInterceptor());
+
   const docConfig = new DocumentBuilder()
     .setTitle('Todo list')
     .setDescription('The todo list api description.')
     .setVersion('1.0')
-    .addTag('todo')
+    .addTag('Todo item', 'Todo item operations.')
     .build();
 
   SwaggerModule.setup(

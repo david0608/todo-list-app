@@ -24,10 +24,7 @@ class CreateTodoItemData {
 
 export class CreateDemoTodoItems1677580718279 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    const data = unfold(
-      100,
-      countDownGenerator(CreateTodoItemData.newByNumber),
-    );
+    const data = unfold(10, countDownGenerator(CreateTodoItemData.newByNumber));
     await queryRunner.manager
       .createQueryBuilder()
       .insert()
@@ -36,5 +33,7 @@ export class CreateDemoTodoItems1677580718279 implements MigrationInterface {
       .execute();
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {}
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    // do nothing.
+  }
 }
