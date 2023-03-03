@@ -1,39 +1,55 @@
-import { flow } from 'fp-ts/function';
-import * as O from 'fp-ts/Option';
-import * as E from 'fp-ts/Either';
-import * as A from 'fp-ts/Array';
-import { optionParseIntRangeIncluding } from './utils';
+import { pipe } from 'fp-ts/function';
+import { Option, some, none, chain as Ochain } from 'fp-ts/Option';
+import {
+  Either,
+  fromOption as EfromOption,
+  toUnion as EtoUnion,
+} from 'fp-ts/Either';
+import { Int, makeInt, isIntRangeIncluding } from './int';
 
-export enum Priority {
-  Critical = 1,
-  Normal = 2,
-  Low = 3,
+interface PriorityBrand {
+  readonly Priority: unique symbol;
 }
 
-type NOT_PRIORITY = 'NOT_PRIORITY';
+export type Priority = Int & PriorityBrand;
 
-const NOT_PRIORITY: NOT_PRIORITY = 'NOT_PRIORITY';
+export const Critical: Priority = 1 as Priority;
+export const Normal: Priority = 2 as Priority;
+export const Low: Priority = 3 as Priority;
 
-export function isPriority(v: any): v is Priority {
-  return v === Priority.Critical || v === Priority.Normal || v === Priority.Low;
+export const PriorityEnum = [Critical, Normal, Low] as const;
+
+// Priority type guard.
+export function isPriority(v: unknown): v is Priority {
+  return pipe(v, isIntRangeIncluding(Critical, Low));
 }
 
-export function isArrayOfPriority(av: any[]): av is Priority[] {
+// Priority[] type guard.
+export function isArrayOfPriority(av: unknown[]): av is Priority[] {
   return !av.some((v) => !isPriority(v));
 }
 
-export const eitherPriority: <T>(v: T) => E.Either<T, Priority> = (v) =>
-  isPriority(v) ? E.right(v as Priority) : E.left(v);
+// Parse a value into Priority.
+export function makePriority(v: unknown): Option<Priority> {
+  return pipe(
+    v,
+    makeInt,
+    Ochain((i) =>
+      isIntRangeIncluding(Critical, Low)(i) ? some(i as Priority) : none,
+    ),
+  );
+}
 
-export const optionParsePriority: (v: any) => O.Option<Priority> = flow(
-  optionParseIntRangeIncluding(Priority.Critical, Priority.Low),
-  O.chain(flow(eitherPriority, O.fromEither)),
-);
+// Parse a value into Priority. Return original value if failed.
+export function tryMakePriority<T>(v: T): Either<T, Priority> {
+  return pipe(
+    v,
+    makePriority,
+    EfromOption(() => v),
+  );
+}
 
-export const parsePriority: (v: any) => Priority | NOT_PRIORITY = flow(
-  optionParsePriority,
-  O.getOrElse<Priority | NOT_PRIORITY>(() => NOT_PRIORITY),
-);
-
-export const parseArrayOfPriority: (v: any[]) => (Priority | NOT_PRIORITY)[] =
-  A.map(parsePriority);
+// Parse a value into Priority. Unwrap result without checking.
+export function makePriorityUncheck<T>(v: T): Priority | T {
+  return pipe(v, tryMakePriority, EtoUnion);
+}

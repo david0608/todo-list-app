@@ -1,5 +1,5 @@
 import { ValidationOptions, buildMessage, ValidateBy } from 'class-validator';
-import { isPriority, isArrayOfPriority } from '../types/priority';
+import { isPriority, isArrayOfPriority } from '../types';
 
 export function IsPriority(validationOptions?: ValidationOptions) {
   return ValidateBy(

@@ -1,7 +1,12 @@
 import { Transform } from 'class-transformer';
-import { parsePriority, parseArrayOfPriority } from '../types/priority';
+import { pipe } from 'fp-ts/function';
+import { map as Amap } from 'fp-ts/Array';
+import { makePriorityUncheck } from '../types';
 
-export const ToPriority = () => Transform(({ value }) => parsePriority(value));
+export const ToPriority = () =>
+  Transform(({ value }) => makePriorityUncheck(value));
 
 export const ToArrayOfPriority = () =>
-  Transform(({ value }) => parseArrayOfPriority(String(value).split(',')));
+  Transform(({ value }) =>
+    pipe(String(value).split(','), Amap(makePriorityUncheck)),
+  );
