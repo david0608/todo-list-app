@@ -17,7 +17,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseInterceptor());
 
   const docConfig = new DocumentBuilder()
-    .setTitle('Todo list')
+    .setTitle('Todo List API')
     .setDescription('The todo list api description.')
     .setVersion('1.0')
     .addTag('Todo item', 'Todo item operations.')
