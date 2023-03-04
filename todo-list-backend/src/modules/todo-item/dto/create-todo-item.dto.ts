@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
-import { Priority, PriorityEnum } from '../../../common/types';
+import { Priority, PriorityEnum } from '../../../common/types/priority';
 import { ToPriority } from '../../../common/transformers';
 import { IsPriority } from '../../../common/validators';
 

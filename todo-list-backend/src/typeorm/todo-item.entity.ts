@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { Priority, PriorityEnum } from '../common/types';
+import { Priority, PriorityEnum } from '../common/types/priority';
 
 @Entity('todo_item')
 export class TodoItem {
