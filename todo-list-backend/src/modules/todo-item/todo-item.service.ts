@@ -44,8 +44,22 @@ export class TodoItemService {
   }
 
   async createOne(createTodoItemDto: CreateTodoItemDto) {
-    const newTodoItem = this.todoItemRepository.create(createTodoItemDto);
-    return this.todoItemRepository.save(newTodoItem);
+    return this.todoItemRepository
+      .createQueryBuilder()
+      .insert()
+      .into(TodoItem)
+      .values([createTodoItemDto])
+      .returning([
+        'id',
+        'title',
+        'detail',
+        'priority',
+        'done',
+        'created_at',
+        'updated_at',
+      ])
+      .execute()
+      .then((res) => res.raw[0] as TodoItem);
   }
 
   async updateOnebyId(id: string, updateTodoItemDto: UpdateTodoItemDto) {
