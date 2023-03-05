@@ -1,5 +1,5 @@
 import { ValidationOptions, buildMessage, ValidateBy } from 'class-validator';
-import { isTodoItemSortKey } from '../types/todo-item-sort-key'
+import { isTodoItemSortKey } from '../types/todo-item-sort-key';
 
 export function IsTodoItemSortKey(validationOptions?: ValidationOptions) {
   return ValidateBy(

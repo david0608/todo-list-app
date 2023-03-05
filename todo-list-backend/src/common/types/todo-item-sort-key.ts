@@ -1,4 +1,4 @@
-import { isString } from './string'
+import { isString } from './string';
 
 interface TodoItemSortKeyBrand {
   readonly TodoItemSortKey: unique symbol;
@@ -14,5 +14,5 @@ export const TodoItemSortKeyEnum = [Priority, CreatedAt, UpdatedAt] as const;
 
 // TodoItemSortKey type guard.
 export function isTodoItemSortKey(v: unknown): v is TodoItemSortKey {
-  return isString(v) && TodoItemSortKeyEnum.includes(v as TodoItemSortKey)
+  return isString(v) && TodoItemSortKeyEnum.includes(v as TodoItemSortKey);
 }

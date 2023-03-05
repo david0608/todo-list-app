@@ -1,10 +1,15 @@
-import { pipe } from 'fp-ts/function';
-import { Option, some, none } from 'fp-ts/Option';
+import { pipe, flow } from 'fp-ts/function';
+import { Option, fromEither as OfromEither } from 'fp-ts/Option';
 import {
   Either,
+  right,
+  left,
   fromOption as EfromOption,
   toUnion as EtoUnion,
+  orElse as EorElse,
+  chain as Echain,
 } from 'fp-ts/Either';
+import { isString } from './string';
 
 // number type guard.
 export function isNumber(v: unknown): v is number {
@@ -13,16 +18,16 @@ export function isNumber(v: unknown): v is number {
 
 // Parse a value into number.
 export function makeNumber(v: unknown): Option<number> {
-  if (isNumber(v)) {
-    return some(v);
-  } else {
-    const n = Number(v);
-    if (Number.isNaN(n)) {
-      return none;
-    } else {
-      return some(n);
-    }
-  }
+  return pipe(
+    isNumber(v) ? right(v) : left(v),
+    EorElse(
+      flow(
+        (v) => (isString(v) ? right(Number(v)) : left(v)),
+        Echain((n) => (isNaN(n) ? left(n) : right(n))),
+      ),
+    ),
+    OfromEither,
+  );
 }
 
 // Parse a value into number. Return original value if failed.
