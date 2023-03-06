@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Priority, PriorityEnum } from '../common/types/priority';
+import { Ord } from 'fp-ts/Ord';
 
 @Entity('todo_item')
 export class TodoItem {
@@ -37,3 +38,9 @@ export class TodoItem {
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   updated_at: Date;
 }
+
+export const ordTodoItemByTitle: Ord<TodoItem> = {
+  equals: (first, second) => first.title === second.title,
+  compare: (first, second) =>
+    first.title < second.title ? -1 : first.title > second.title ? 1 : 0,
+};

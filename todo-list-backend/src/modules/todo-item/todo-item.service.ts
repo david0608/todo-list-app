@@ -63,9 +63,13 @@ export class TodoItemService {
   }
 
   async updateOnebyId(id: string, updateTodoItemDto: UpdateTodoItemDto) {
-    return this.todoItemRepository
-      .update(id, updateTodoItemDto)
-      .then((result) => result.affected);
+    if (Object.keys(updateTodoItemDto).length === 0) {
+      return 1;
+    } else {
+      return this.todoItemRepository
+        .update(id, updateTodoItemDto)
+        .then((result) => result.affected);
+    }
   }
 
   async deleteOneById(id: string) {

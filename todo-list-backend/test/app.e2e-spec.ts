@@ -2,23 +2,37 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as supertest from 'supertest';
 import { pipe } from 'fp-ts/function';
+import { Ordering } from 'fp-ts/lib/Ordering';
 import * as B from 'fp-ts/boolean';
 import * as A from 'fp-ts/Array';
 import * as E from 'fp-ts/Either';
 import * as T from 'fp-ts/Task';
 import * as TE from 'fp-ts/TaskEither';
+import * as N from 'fp-ts/number';
+import * as D from 'fp-ts/Date';
 import { AppModule } from '../src/modules/app.module';
 import { ResponseInterceptor } from '../src/interceptors';
 import { countDownGenerator } from '../src/common/utils';
 import { CreateTodoItemDto } from '../src/modules/todo-item/dto';
-import { TodoItem } from '../src/typeorm';
+import { TodoItem, ordTodoItemByTitle } from '../src/typeorm';
 import { Priority } from '../src/common/types/priority';
 
-type Request = supertest.SuperTest<supertest.Test>;
+const stringOver64Chars =
+  'abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij';
+
+const e2eTestTodoItemPrefix = 'e2e_test_todo_item';
+
+const badRequestResBody = expect.objectContaining({
+  statusCode: 400,
+  error: 'Bad Request',
+});
+const notFoundResBody = { statusCode: 404, message: 'Not Found' };
+
+type TestRequest = supertest.SuperTest<supertest.Test>;
 
 describe('Application (e2e)', () => {
   let app: INestApplication;
-  let request: Request;
+  let request: TestRequest;
 
   // Initialize application instance.
   beforeAll(async () => {
@@ -71,7 +85,7 @@ describe('Application (e2e)', () => {
       if (E.isLeft(created)) {
         throw created.left;
       } else {
-        mockTodoItems = created.right;
+        mockTodoItems = A.sort(ordTodoItemByTitle)(created.right as TodoItem[]);
       }
     });
 
@@ -83,6 +97,7 @@ describe('Application (e2e)', () => {
       }
     });
 
+    // Test GET /todo_item/:id success reqponse.
     describe('GET /todo_item/:id', () => {
       let res: supertest.Response;
 
@@ -96,6 +111,227 @@ describe('Application (e2e)', () => {
         expect(res.body).toEqual({ statusCode: 200, data: mockTodoItems[0] }));
     });
 
+    // Test GET /todo_item/:id bad request error response caused by invalid id.
+    describe('GET /todo_item/:id with invalid id.', () => {
+      let res: supertest.Response;
+
+      beforeAll(async () => {
+        res = await request.get(`/todo_item/1`);
+      });
+
+      it('should respond with status 400.', () =>
+        expect(res.statusCode).toEqual(400));
+      it('should respond with bad request error.', () =>
+        expect(res.body).toEqual(badRequestResBody));
+    });
+
+    // Test GET /todo_item/:id not found response.
+    describe('GET /todo_item/:id with not existed id.', () => {
+      let res: supertest.Response;
+
+      beforeAll(async () => {
+        const id = pipe(
+          await todoItemCreateRequest(request)({
+            title: 't',
+            priority: 1 as Priority,
+          })(),
+          E.match(
+            () => {
+              throw new Error('Failed to create mock data.');
+            },
+            (item) => item.id,
+          ),
+        );
+        pipe(
+          await todoItemDeleteRequest(request)(id)(),
+          E.match(
+            () => {
+              throw new Error('Failed to delete mock data.');
+            },
+            () => {
+              /*do nothing*/
+            },
+          ),
+        );
+        res = await request.get(`/todo_item/${id}`);
+      });
+
+      it('should respond with status 404.', () =>
+        expect(res.statusCode).toEqual(404));
+      it('should respond with not found error.', () =>
+        expect(res.body).toEqual(notFoundResBody));
+    });
+
+    // Test GET /todo_item success response.
+    describe('GET /todo_item', () => {
+      let res: supertest.Response;
+
+      beforeAll(async () => {
+        res = await request.get(`/todo_item?search=${e2eTestTodoItemPrefix}`);
+      });
+
+      it('should respond with status 200.', () =>
+        expect(res.statusCode).toEqual(200));
+      it('should respond with expected body.', () => {
+        expect(res.body.statusCode).toEqual(200);
+        expect(res.body.data.length).toEqual(10);
+        expect(A.sort(ordTodoItemByTitle)(res.body.data)).toEqual(
+          mockTodoItems,
+        );
+      });
+    });
+
+    // Test GET /todo_item with search success response.
+    describe('GET /todo_item with search', () => {
+      let res: supertest.Response;
+
+      beforeAll(async () => {
+        res = await request.get(
+          `/todo_item?search=${e2eTestTodoItemPrefix}_title_10`,
+        );
+      });
+
+      it('should respond with status 200.', () =>
+        expect(res.statusCode).toEqual(200));
+      it('should respond with expected body.', () => {
+        expect(res.body.statusCode).toEqual(200);
+        expect(res.body.data.length).toEqual(1);
+      });
+    });
+
+    // Test GET /todo_item with priority filter success response.
+    describe('GET /todo_item with priority filter', () => {
+      let res: supertest.Response;
+
+      beforeAll(async () => {
+        res = await request.get(
+          `/todo_item?search=${e2eTestTodoItemPrefix}&priority=1,2`,
+        );
+      });
+
+      it('should respond with status 200.', () => {
+        expect(res.statusCode).toBe(200);
+      });
+      it('should respond data with expected priority.', () => {
+        let tested = false;
+        for (const item of res.body.data) {
+          expect([1, 2]).toContain(item.priority);
+          tested = true;
+        }
+        expect(tested).toBe(true);
+      });
+    });
+
+    // Test GET /todo_item with done status filter success response.
+    describe('GET /todo_item with done status filter', () => {
+      let doneRes: supertest.Response;
+      let nonDoneRes: supertest.Response;
+
+      beforeAll(async () => {
+        doneRes = await request.get(
+          `/todo_item?search=${e2eTestTodoItemPrefix}&done=true`,
+        );
+        nonDoneRes = await request.get(
+          `/todo_item?search=${e2eTestTodoItemPrefix}&done=false`,
+        );
+      });
+
+      it('should respond with status 200.', () => {
+        expect(doneRes.statusCode).toBe(200);
+        expect(nonDoneRes.statusCode).toBe(200);
+      });
+      it('should respond data with expected done status.', () => {
+        let tested = false;
+        for (const item of doneRes.body.data) {
+          expect(item.done).toBe(true);
+          tested = true;
+        }
+        for (const item of nonDoneRes.body.data) {
+          expect(item.done).toBe(false);
+          tested = true;
+        }
+        expect(tested).toBe(true);
+      });
+    });
+
+    // Test GET /todo_item with sort success response.
+    describe('GET /todo_item with sort', () => {
+      type Cmp = (f: TodoItem, s: TodoItem) => Ordering;
+      type TD = { key: string; cmp: Cmp };
+
+      const sortRequest = (key: string, reverse: boolean) =>
+        request.get(
+          `/todo_item?search=${e2eTestTodoItemPrefix}&sortKey=${key}&reverse=${reverse}`,
+        );
+      const testFunction = async (td: TD, reverse: boolean) => {
+        let tested = false;
+        const res = await sortRequest(td.key, reverse);
+        expect(res.statusCode).toBe(200);
+        const items = res.body.data;
+        for (let i = 0; i < items.length - 1; i++) {
+          expect(reverse ? [-1, 0] : [0, 1]).toContain(
+            td.cmp(items[i], items[i + 1]),
+          );
+          tested = true;
+        }
+        expect(tested).toBe(true);
+      };
+
+      it('should respond with status 200 and expected data order.', async () => {
+        const testData: TD[] = [
+          {
+            key: 'priority',
+            cmp: (f, s) => N.Ord.compare(f.priority, s.priority),
+          },
+          {
+            key: 'created_at',
+            cmp: (f, s) =>
+              D.Ord.compare(new Date(f.created_at), new Date(s.created_at)),
+          },
+          {
+            key: 'updated_at',
+            cmp: (f, s) =>
+              D.Ord.compare(new Date(f.updated_at), new Date(s.updated_at)),
+          },
+        ];
+        const test = pipe(
+          testData,
+          T.traverseSeqArray((td: TD) => async () => {
+            await testFunction(td, true);
+            await testFunction(td, false);
+          }),
+        );
+        await test();
+      });
+    });
+
+    describe('GET /todo_item with invalid query parameter', () => {
+      const testFunction = async (qs: string) => {
+        const res = await request.get(`/todo_item?${qs}`);
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toEqual(badRequestResBody);
+      };
+
+      it('should respond with status 400 and expected error.', async () => {
+        const testData = [
+          `search=${stringOver64Chars}`, // over 64 chars.
+          'priority=4', // invalid priority.
+          'priority=a', // invalid priority.
+          'priority=1,2,3,4', // invalid priority.
+          'priority=1,2,', // invalid format.
+          'done=yes', // invalid boolean.
+          'sortKey=title', // invalid key.
+          'reverse=no', // invalid boolean.
+        ];
+        const test = pipe(
+          testData,
+          T.traverseSeqArray((td) => async () => await testFunction(td)),
+        );
+        await test();
+      });
+    });
+
+    // Test POST /todo_item success response.
     describe('POST /todo_item', () => {
       let postRes: supertest.Response;
       let getRes: supertest.Response;
@@ -119,6 +355,39 @@ describe('Application (e2e)', () => {
       });
     });
 
+    // Test POST /todo_item bad request response caused by invalid data.
+    describe('POST /todo_item with invalid data provided', () => {
+      const data = [
+        { priority: 1 }, // Title not provided.
+        { title: 'title' }, // Priority not provided.
+        { title: 123, priority: 1 }, // Invalid title data.
+        { title: true, priority: 1 }, // Invalid title data.
+        { title: '', priority: 1 }, // Invalid title data.
+        { title: 'title', priority: 4 }, // Invalid priority data.
+        { title: 'title', priority: true }, // Invalid priority data.
+        { title: 'title', priority: '' }, // Invalid priority data.
+      ];
+      const res: any[] = [];
+
+      beforeAll(async () => {
+        for (const d of data) {
+          res.push(await request.post('/todo_item').send(d));
+        }
+      });
+
+      it('should respond with status 400.', () => {
+        for (const r of res) {
+          expect(r.statusCode).toEqual(400);
+        }
+      });
+      it('should respond with bad request error.', () => {
+        for (const r of res) {
+          expect(r.body).toEqual(badRequestResBody);
+        }
+      });
+    });
+
+    // Test PATCH /todo_item/:id success response.
     describe('PATCH /todo_item/:id', () => {
       let patchRes: supertest.Response;
       let getRes: supertest.Response;
@@ -145,6 +414,94 @@ describe('Application (e2e)', () => {
       });
     });
 
+    // Test PATCH /todo_item/:id bad request error response caudes by invalid id.
+    describe('PATCH /todo_item/:id with invalid id.', () => {
+      let res: supertest.Response;
+
+      beforeAll(async () => {
+        res = await request.patch(`/todo_item/1`).send({ title: 'patched' });
+      });
+
+      it('should respond with status 400.', () =>
+        expect(res.statusCode).toEqual(400));
+      it('should respond with bad request error.', () =>
+        expect(res.body).toEqual(badRequestResBody));
+    });
+
+    // Test PATCH /todo_item/:id bad request response caused by invalid data.
+    describe('PATCH /todo_item/:id with invalid data provided', () => {
+      const data = [
+        { priority: 4 }, // Invalid priority data.
+        { priority: true }, // Invalid priority data.
+        { title: 123 }, // Invalid title data.
+        { title: true }, // Invalid title data.
+        { detail: 123 }, // Invalid detail data.
+        { detail: true }, // Invalid detail data.
+        { done: 'yes' }, // Invalid done data.
+        { done: 1 }, // Invalid done data.
+      ];
+      const res: any[] = [];
+
+      beforeAll(async () => {
+        for (const d of data) {
+          res.push(
+            await request.patch(`/todo_item/${mockTodoItems[0].id}`).send(d),
+          );
+        }
+      });
+
+      it('should respond with status 400.', () => {
+        for (const r of res) {
+          expect(r.statusCode).toEqual(400);
+        }
+      });
+      it('should respond with bad request error.', () => {
+        for (const r of res) {
+          expect(r.body).toEqual(badRequestResBody);
+        }
+      });
+    });
+
+    // Test PATCH /todo_item/:id not found response.
+    describe('PATCH /todo_item/:id with not existed id.', () => {
+      let res: supertest.Response;
+
+      beforeAll(async () => {
+        const id = pipe(
+          await todoItemCreateRequest(request)({
+            title: 't',
+            priority: 1 as Priority,
+          })(),
+          E.match(
+            () => {
+              throw new Error('Failed to create mock data.');
+            },
+            (item) => item.id,
+          ),
+        );
+        pipe(
+          await todoItemDeleteRequest(request)(id)(),
+          E.match(
+            () => {
+              throw new Error('Failed to delete mock data.');
+            },
+            () => {
+              /*do nothing*/
+            },
+          ),
+        );
+        res = await request
+          .patch(`/todo_item/${id}`)
+          .send({ title: 'patched' });
+      });
+
+      it('should respond with status 404.', () =>
+        expect(res.statusCode).toEqual(404));
+      it('should respond with not found error.', () =>
+        expect(res.body).toEqual(notFoundResBody));
+    });
+
+    // Test DELETE /todo_item/:id success response.
     describe('DELETE /todo_item/:id', () => {
       let deleteRes: supertest.Response;
       let getRes: supertest.Response;
@@ -160,42 +517,94 @@ describe('Application (e2e)', () => {
       it('should successfully delete todo item.', () =>
         expect(getRes.statusCode).toEqual(404));
     });
+
+    // Test DELETE /todo_item/:id bad request error response caused by invalid id.
+    describe('DELETE /todo_item/:id with invalid id.', () => {
+      let res: supertest.Response;
+
+      beforeAll(async () => {
+        res = await request.delete(`/todo_item/1`);
+      });
+
+      it('should respond with status 400.', () =>
+        expect(res.statusCode).toEqual(400));
+      it('should respond with bad request error.', () =>
+        expect(res.body).toEqual(badRequestResBody));
+    });
+
+    // Test DELETE /todo_item/:id not found response.
+    describe('DELETE /todo_item/:id with not existed id.', () => {
+      let res: supertest.Response;
+
+      beforeAll(async () => {
+        const id = pipe(
+          await todoItemCreateRequest(request)({
+            title: 't',
+            priority: 1 as Priority,
+          })(),
+          E.match(
+            () => {
+              throw new Error('Failed to create mock data.');
+            },
+            (item) => item.id,
+          ),
+        );
+        pipe(
+          await todoItemDeleteRequest(request)(id)(),
+          E.match(
+            () => {
+              throw new Error('Failed to delete mock data.');
+            },
+            () => {
+              /*do nothing*/
+            },
+          ),
+        );
+        res = await request.delete(`/todo_item/${id}`);
+      });
+
+      it('should respond with status 404.', () =>
+        expect(res.statusCode).toEqual(404));
+      it('should respond with not found error.', () =>
+        expect(res.body).toEqual(notFoundResBody));
+    });
   });
 });
 
-const mockTodoItemDataCreator = (request: Request) =>
+const mockTodoItemDataCreator = (request: TestRequest) =>
   pipe(
     generateCreateTodoItemDtos(10),
     TE.traverseSeqArray(todoItemCreateRequest(request)),
   );
 
 const todoItemDataDeleter =
-  (request: Request) => (items: readonly TodoItem[]) =>
+  (request: TestRequest) => (items: readonly TodoItem[]) =>
     pipe(
       items.map((item) => item.id),
       TE.traverseSeqArray(todoItemDeleteRequest(request)),
     );
 
-const todoItemCreateRequest = (request: Request) => (data: CreateTodoItemDto) =>
-  TE.tryCatch(
-    pipe(
-      () => request.post('/todo_item').send(data),
-      T.map((res) =>
-        pipe(
-          res.statusCode === 201,
-          B.match(
-            () => {
-              throw `POST to /todo_item failed with status: ${res.statusCode}`;
-            },
-            () => res.body.data as TodoItem,
+const todoItemCreateRequest =
+  (request: TestRequest) => (data: CreateTodoItemDto) =>
+    TE.tryCatch(
+      pipe(
+        () => request.post('/todo_item').send(data),
+        T.map((res) =>
+          pipe(
+            res.statusCode === 201,
+            B.match(
+              () => {
+                throw `POST to /todo_item failed with status: ${res.statusCode}`;
+              },
+              () => res.body.data as TodoItem,
+            ),
           ),
         ),
       ),
-    ),
-    (reason) => new Error(`${reason}`),
-  );
+      (reason) => new Error(`${reason}`),
+    );
 
-const todoItemDeleteRequest = (request: Request) => (id: string) =>
+const todoItemDeleteRequest = (request: TestRequest) => (id: string) =>
   TE.tryCatch(
     () => request.delete(`/todo_item/${id}`),
     (reason) => new Error(`${reason}`),
@@ -211,8 +620,8 @@ function generateCreateTodoItemDtos(n: number): CreateTodoItemDto[] {
 // Testing CreateTodoItemDto object creation function.
 function createTodoItemDto(n = 0): CreateTodoItemDto {
   return {
-    title: `e2e_test_todo_item_title_${n}`,
-    detail: `e2e_test_todo_item_detail_${n}`,
+    title: `${e2eTestTodoItemPrefix}_title_${n}`,
+    detail: `${e2eTestTodoItemPrefix}_detail_${n}`,
     priority: ((n % 3) + 1) as Priority,
   };
 }
