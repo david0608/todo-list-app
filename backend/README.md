@@ -1,3 +1,5 @@
+# Todo list app backend
+
 ## Prerequisites
 
 ### Install tools
@@ -42,11 +44,11 @@ nest start
 
 ### Swagger UI
 
-With todo-list-app backend running on your host, you can enter [127.0.0.1:8000/doc/api](127.0.0.1:8000/doc/api) in your browser to visit Swagger UI for API details.  
+With todo-list-app backend running on your host, you can enter [http://127.0.0.1:8000/doc/api](http://127.0.0.1:8000/doc/api) in your browser to visit Swagger UI for API details.  
 
 ### OpenAPI.json
 
-Or you can visit [127.0.0.1:8000/doc/api-json](127.0.0.1:8000/doc/api-json) to fetch API spec on JSON format.
+Or you can visit [http://127.0.0.1:8000/doc/api-json](http://127.0.0.1:8000/doc/api-json) to fetch API spec on JSON format.
 
 ## Tests
 
