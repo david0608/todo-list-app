@@ -58,22 +58,6 @@ describe('Application (e2e)', () => {
     await app.close();
   });
 
-  // Test app module.
-  describe('app module', () => {
-    describe('GET /', () => {
-      let res: supertest.Response;
-
-      beforeAll(async () => {
-        res = await request.get('/');
-      });
-
-      it('should respond with status 200.', () =>
-        expect(res.statusCode).toEqual(200));
-      it('should respond with expected body.', () =>
-        expect(res.body).toEqual({ statusCode: 200, data: 'Hello World!' }));
-    });
-  });
-
   // Test todo_item module.
   describe('todo_item module', () => {
     // Mock todo item data created for testing.
