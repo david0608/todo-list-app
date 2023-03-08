@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-import { createHashRouteHandler } from '../../utils/router'
+import { createHashRouteHandler } from '../../../common/utils'
 
 const LogoRoot = styled.div`
   font-size: 40px;
@@ -12,7 +12,7 @@ const LogoRoot = styled.div`
   user-select: none;
 `
 
-const Logo: React.FunctionComponent = () => {
+const Logo: React.FC = () => {
   return (
     <LogoRoot
       onClick={createHashRouteHandler('/')}

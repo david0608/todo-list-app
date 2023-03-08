@@ -4,10 +4,12 @@ import styled from 'styled-components'
 import clsx from 'clsx'
 import Logo from './Logo'
 import { AddButton } from '../buttons'
-import { createHashRouteHandler } from '../../utils/router'
+import { createHashRouteHandler } from '../../../common/utils'
 
 const HeaderRoot = styled.div`
+position: relative;
 height: 60px;
+z-index: 1;
 
 >.header-body {
   position: fixed;
@@ -15,7 +17,7 @@ height: 60px;
   left: 0;
   height: inherit;
   width: 100%;
-  background-color: lightskyblue;
+  background-color: deepskyblue;
 
   >.header-content {
     box-sizing: border-box;
@@ -29,6 +31,8 @@ height: 60px;
 
     >.add-todo-button {
       margin-left: auto;
+      background-color: transparent;
+      font-size: 30px;
     }
   }
 }
@@ -38,7 +42,7 @@ interface HeaderProps {
   className?: string
 }
 
-const Header: React.FunctionComponent<HeaderProps> = (props) => {
+const Header: React.FC<HeaderProps> = (props) => {
   const {
     className,
   } = props

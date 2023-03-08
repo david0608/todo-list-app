@@ -1,12 +1,10 @@
 import React from 'react'
-import Header from '../components/Header'
-import TestScroll from '../components/TestScroll'
+import Header from '../common/Header'
 
 const EditTodo = () => {
   return (
     <React.Fragment>
       <Header />
-      <TestScroll content='Here is EditTodo.' />
     </React.Fragment>
   )
 }
