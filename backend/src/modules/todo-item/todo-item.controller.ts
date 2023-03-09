@@ -47,7 +47,7 @@ export class TodoItemController {
   @Get(':id')
   async getOneById(@Param('id', ParseUUIDPipe) id: string) {
     return this.todoItemService.getOneById(id).then((item) => {
-      if (item === null) {
+      if (!item) {
         throw new NotFoundException();
       } else {
         return item;
@@ -89,7 +89,7 @@ export class TodoItemController {
     return this.todoItemService
       .updateOnebyId(id, updateTodoItemDto)
       .then((updated) => {
-        if (updated === 0) {
+        if (!updated) {
           throw new NotFoundException();
         }
       });
@@ -103,7 +103,7 @@ export class TodoItemController {
   @Delete(':id')
   async delete(@Param('id', ParseUUIDPipe) id: string) {
     return this.todoItemService.deleteOneById(id).then((deleted) => {
-      if (deleted === 0) {
+      if (!deleted) {
         throw new NotFoundException();
       }
     });
