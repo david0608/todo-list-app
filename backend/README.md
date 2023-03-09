@@ -32,7 +32,7 @@ $ npm install
 After successfully installed dependencies, run following command to start backend server.
 
 ```
-$ npm start
+$ npm run start
 npm run start
 todo-list-backend@0.0.1 start
 nest start
@@ -44,7 +44,7 @@ nest start
 
 ### Swagger UI
 
-With todo-list-app backend running on your host, you can enter [http://127.0.0.1:8000/doc/api](http://127.0.0.1:8000/doc/api) in your browser to visit Swagger UI for API details.  
+With todo-list-app postgres and backend running on your host, you can enter [http://127.0.0.1:8000/doc/api](http://127.0.0.1:8000/doc/api) in your browser to visit Swagger UI for API details.  
 
 ### OpenAPI.json
 
