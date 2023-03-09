@@ -60,6 +60,14 @@ Run following command under todo-list-app/backend directory to run unit tests.
 $ npm run test
 ```
 
+Or run unit tests with coverage report.
+
+```
+$ npm run test:cov
+```
+
+Generated coverage report files can be found in todo-list-app/backend/coverage directory.
+
 ### E2E tests
 
 Run following command under todo-list-app/backend directory to run e2e tests.
@@ -67,3 +75,11 @@ Run following command under todo-list-app/backend directory to run e2e tests.
 ```
 $ npm run test:e2e
 ```
+
+Or run e2e tests with coverage report.
+
+```
+$ npm run test:e2e:cov
+```
+
+Generated coverage report files can be found in todo-list-app/backend/coverage-e2e directory.

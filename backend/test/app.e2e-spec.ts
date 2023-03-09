@@ -114,29 +114,7 @@ describe('Application (e2e)', () => {
       let res: supertest.Response;
 
       beforeAll(async () => {
-        const id = pipe(
-          await todoItemCreateRequest(request)({
-            title: 't',
-            priority: 1 as Priority,
-          })(),
-          E.match(
-            () => {
-              throw new Error('Failed to create mock data.');
-            },
-            (item) => item.id,
-          ),
-        );
-        pipe(
-          await todoItemDeleteRequest(request)(id)(),
-          E.match(
-            () => {
-              throw new Error('Failed to delete mock data.');
-            },
-            () => {
-              /*do nothing*/
-            },
-          ),
-        );
+        const id = await getNotExistsId(request);
         res = await request.get(`/todo_item/${id}`);
       });
 
@@ -247,6 +225,7 @@ describe('Application (e2e)', () => {
         request.get(
           `/todo_item?search=${e2eTestTodoItemPrefix}&sortKey=${key}&reverse=${reverse}`,
         );
+
       const testFunction = async (td: TD, reverse: boolean) => {
         let tested = false;
         const res = await sortRequest(td.key, reverse);
@@ -289,6 +268,7 @@ describe('Application (e2e)', () => {
       });
     });
 
+    // Test GET /todo_item bad request response caused by invalid query parameter.
     describe('GET /todo_item with invalid query parameter', () => {
       const testFunction = async (qs: string) => {
         const res = await request.get(`/todo_item?${qs}`);
@@ -309,7 +289,7 @@ describe('Application (e2e)', () => {
         ];
         const test = pipe(
           testData,
-          T.traverseSeqArray((td) => async () => await testFunction(td)),
+          T.traverseSeqArray((td) => () => testFunction(td)),
         );
         await test();
       });
@@ -341,60 +321,58 @@ describe('Application (e2e)', () => {
 
     // Test POST /todo_item bad request response caused by invalid data.
     describe('POST /todo_item with invalid data provided', () => {
-      const data = [
-        { priority: 1 }, // Title not provided.
-        { title: 'title' }, // Priority not provided.
-        { title: 123, priority: 1 }, // Invalid title data.
-        { title: true, priority: 1 }, // Invalid title data.
-        { title: '', priority: 1 }, // Invalid title data.
-        { title: 'title', priority: 4 }, // Invalid priority data.
-        { title: 'title', priority: true }, // Invalid priority data.
-        { title: 'title', priority: '' }, // Invalid priority data.
-      ];
-      const res: any[] = [];
+      const testFunction = async (td: Record<string, any>) => {
+        const res = await request.post('/todo_item').send(td);
+        expect(res.statusCode).toEqual(400);
+        expect(res.body).toEqual(badRequestResBody);
+      };
 
-      beforeAll(async () => {
-        for (const d of data) {
-          res.push(await request.post('/todo_item').send(d));
-        }
-      });
-
-      it('should respond with status 400.', () => {
-        for (const r of res) {
-          expect(r.statusCode).toEqual(400);
-        }
-      });
-      it('should respond with bad request error.', () => {
-        for (const r of res) {
-          expect(r.body).toEqual(badRequestResBody);
-        }
+      it('should respond with status 400 and bad request error.', async () => {
+        const data = [
+          { priority: 1 }, // Title not provided.
+          { title: 'title' }, // Priority not provided.
+          { title: 123, priority: 1 }, // Invalid title data.
+          { title: true, priority: 1 }, // Invalid title data.
+          { title: '', priority: 1 }, // Invalid title data.
+          { title: 'title', priority: 4 }, // Invalid priority data.
+          { title: 'title', priority: true }, // Invalid priority data.
+          { title: 'title', priority: '' }, // Invalid priority data.
+        ];
+        const test = pipe(
+          data,
+          T.traverseSeqArray((td) => () => testFunction(td)),
+        );
+        await test();
       });
     });
 
     // Test PATCH /todo_item/:id success response.
     describe('PATCH /todo_item/:id', () => {
-      let patchRes: supertest.Response;
-      let getRes: supertest.Response;
-      const patchData = {
-        title: 'patched',
-        detail: 'patched',
-        priority: 3,
-        done: true,
+      const testFunction = async (data: Record<string, any>) => {
+        const url = `/todo_item/${mockTodoItems[0].id}`;
+        const patchRes = await request.patch(url).send(data);
+        const getRes = await request.get(url);
+        expect(patchRes.statusCode).toEqual(200);
+        for (const key of Object.keys(data)) {
+          expect(getRes.body.data[key]).toEqual(data[key]);
+        }
       };
 
-      beforeAll(async () => {
-        const url = `/todo_item/${mockTodoItems[0].id}`;
-        patchRes = await request.patch(url).send(patchData);
-        getRes = await request.get(url);
-      });
-
-      it('should respond with status 200.', () =>
-        expect(patchRes.statusCode).toEqual(200));
-      it('should successfully update todo item.', () => {
-        expect(getRes.body.data.title).toEqual(patchData.title);
-        expect(getRes.body.data.detail).toEqual(patchData.detail);
-        expect(getRes.body.data.priority).toEqual(patchData.priority);
-        expect(getRes.body.data.done).toEqual(patchData.done);
+      it('should respond with status 200 and successfully update todo item.', async () => {
+        const testData = [
+          {
+            title: 'patched',
+            detail: 'patched',
+            priority: 3,
+            done: true,
+          },
+          {},
+        ];
+        const test = pipe(
+          testData,
+          T.traverseSeqArray((td) => () => testFunction(td)),
+        );
+        await test();
       });
     });
 
@@ -414,35 +392,30 @@ describe('Application (e2e)', () => {
 
     // Test PATCH /todo_item/:id bad request response caused by invalid data.
     describe('PATCH /todo_item/:id with invalid data provided', () => {
-      const data = [
-        { priority: 4 }, // Invalid priority data.
-        { priority: true }, // Invalid priority data.
-        { title: 123 }, // Invalid title data.
-        { title: true }, // Invalid title data.
-        { detail: 123 }, // Invalid detail data.
-        { detail: true }, // Invalid detail data.
-        { done: 'yes' }, // Invalid done data.
-        { done: 1 }, // Invalid done data.
-      ];
-      const res: any[] = [];
+      const testFunction = async (td: Record<string, any>) => {
+        const res = await request
+          .patch(`/todo_item/${mockTodoItems[0].id}`)
+          .send(td);
+        expect(res.statusCode).toEqual(400);
+        expect(res.body).toEqual(badRequestResBody);
+      };
 
-      beforeAll(async () => {
-        for (const d of data) {
-          res.push(
-            await request.patch(`/todo_item/${mockTodoItems[0].id}`).send(d),
-          );
-        }
-      });
-
-      it('should respond with status 400.', () => {
-        for (const r of res) {
-          expect(r.statusCode).toEqual(400);
-        }
-      });
-      it('should respond with bad request error.', () => {
-        for (const r of res) {
-          expect(r.body).toEqual(badRequestResBody);
-        }
+      it('should respond with status 400 and bad request error.', async () => {
+        const data = [
+          { priority: 4 }, // Invalid priority data.
+          { priority: true }, // Invalid priority data.
+          { title: 123 }, // Invalid title data.
+          { title: true }, // Invalid title data.
+          { detail: 123 }, // Invalid detail data.
+          { detail: true }, // Invalid detail data.
+          { done: 'yes' }, // Invalid done data.
+          { done: 1 }, // Invalid done data.
+        ];
+        const test = pipe(
+          data,
+          T.traverseSeqArray((td) => () => testFunction(td)),
+        );
+        await test();
       });
     });
 
@@ -451,29 +424,7 @@ describe('Application (e2e)', () => {
       let res: supertest.Response;
 
       beforeAll(async () => {
-        const id = pipe(
-          await todoItemCreateRequest(request)({
-            title: 't',
-            priority: 1 as Priority,
-          })(),
-          E.match(
-            () => {
-              throw new Error('Failed to create mock data.');
-            },
-            (item) => item.id,
-          ),
-        );
-        pipe(
-          await todoItemDeleteRequest(request)(id)(),
-          E.match(
-            () => {
-              throw new Error('Failed to delete mock data.');
-            },
-            () => {
-              /*do nothing*/
-            },
-          ),
-        );
+        const id = await getNotExistsId(request);
         res = await request
           .patch(`/todo_item/${id}`)
           .send({ title: 'patched' });
@@ -521,29 +472,7 @@ describe('Application (e2e)', () => {
       let res: supertest.Response;
 
       beforeAll(async () => {
-        const id = pipe(
-          await todoItemCreateRequest(request)({
-            title: 't',
-            priority: 1 as Priority,
-          })(),
-          E.match(
-            () => {
-              throw new Error('Failed to create mock data.');
-            },
-            (item) => item.id,
-          ),
-        );
-        pipe(
-          await todoItemDeleteRequest(request)(id)(),
-          E.match(
-            () => {
-              throw new Error('Failed to delete mock data.');
-            },
-            () => {
-              /*do nothing*/
-            },
-          ),
-        );
+        const id = await getNotExistsId(request);
         res = await request.delete(`/todo_item/${id}`);
       });
 
@@ -608,4 +537,13 @@ function createTodoItemDto(n = 0): CreateTodoItemDto {
     detail: `${e2eTestTodoItemPrefix}_detail_${n}`,
     priority: ((n % 3) + 1) as Priority,
   };
+}
+
+async function getNotExistsId(request: TestRequest): Promise<string> {
+  const res = await request
+    .post('/todo_item')
+    .send({ title: 't', priority: 1 });
+  const id = res.body.data.id;
+  await request.delete(`/todo_item/${id}`);
+  return id;
 }
