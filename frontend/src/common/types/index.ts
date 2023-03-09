@@ -11,8 +11,8 @@ export type SortKey = 'priority' | 'created_at' | 'updated_at'
 
 export type FilterOptions = {
   search: string,
-  priority: Priority | null,
-  done: boolean | null,
+  priority?: Priority,
+  done?: boolean,
   sortKey: SortKey,
   reverse: boolean,
 }

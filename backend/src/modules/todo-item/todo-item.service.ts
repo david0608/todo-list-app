@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TodoItem } from '../../typeorm/todo-item.entity';
-import { UpdatedAt } from '../../common/types/todo-item-sort-key';
+import { CreatedAt } from '../../common/types/todo-item-sort-key';
 import { ListTodoItemDto, CreateTodoItemDto, UpdateTodoItemDto } from './dto';
 
 @Injectable()
@@ -38,8 +38,9 @@ export class TodoItemService {
     if (sortKey !== undefined) {
       query.orderBy(sortKey, reverse ? 'ASC' : 'DESC');
     } else {
-      query.orderBy(UpdatedAt, 'DESC');
+      query.orderBy(CreatedAt, 'DESC');
     }
+    query.addOrderBy('title', 'DESC');
     return query.getMany();
   }
 

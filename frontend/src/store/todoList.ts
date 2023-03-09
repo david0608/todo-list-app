@@ -1,4 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { pipe } from 'fp-ts/function'
+import * as A from 'fp-ts/Array'
+import * as O from 'fp-ts/Option'
 import { TodoItem, FilterOptions } from '../common/types'
 
 interface TodoListState {
@@ -17,9 +20,9 @@ const initialState: TodoListState = {
   error: false,
   filterOptions: {
     search: '',
-    priority: null,
-    done: null,
-    sortKey: 'updated_at',
+    priority: undefined,
+    done: undefined,
+    sortKey: 'created_at',
     reverse: false,
   },
   todoItems: [],
@@ -70,3 +73,10 @@ export const todoListSlice = createSlice({
 export default todoListSlice.reducer
 
 export const actions = todoListSlice.actions
+
+export const todoItemSelector: (id: string) => (state: TodoListState) => TodoItem | undefined =
+  (id) => (state) => pipe(
+    state.todoItems,
+    A.findFirst((item) => item.id === id),
+    O.toUndefined,
+  )

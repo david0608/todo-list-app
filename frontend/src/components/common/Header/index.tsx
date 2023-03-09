@@ -9,7 +9,7 @@ import { createHashRouteHandler } from '../../../common/utils'
 const HeaderRoot = styled.div`
 position: relative;
 height: 60px;
-z-index: 1;
+z-index: 1000;
 
 >.header-body {
   position: fixed;

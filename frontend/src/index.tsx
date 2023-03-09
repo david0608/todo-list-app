@@ -21,7 +21,7 @@ ReactDOM.render(
         <Route path='/add'>
           <AddTodo />
         </Route>
-        <Route path='/edit'>
+        <Route path='/edit/:id'>
           <EditTodo />
         </Route>
         <Route path='/'>

@@ -3,11 +3,12 @@ import styled from 'styled-components'
 import { useAppSelector } from '../../store/hooks'
 import Header from '../common/Header'
 import Section from '../common/Section'
+import FilterBar from './FilterBar'
+import SortBar from './SortBar'
 import Todo from './Todo'
 
 const StyledSection = styled(Section)`
 padding: 20px;
-box-sizing: border-box;
 
 >*:not(:first-child) {
   margin-top: 10px;
@@ -16,12 +17,13 @@ box-sizing: border-box;
 
 const TodoList = () => {
   const todoItems = useAppSelector(state => state.todoList.todoItems)
-  console.log(todoItems)
 
   return (
     <React.Fragment>
       <Header />
       <StyledSection>
+        <FilterBar />
+        <SortBar />
         {
           todoItems.map((item) => <Todo key={item.id} todoItem={item} />)
         }

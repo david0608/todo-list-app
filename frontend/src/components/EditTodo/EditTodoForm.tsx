@@ -5,15 +5,10 @@ import { Formik, FormikHelpers } from 'formik'
 import axios from 'axios'
 import TodoForm, { todoFormSchema, type TodoFormData } from '../common/TodoForm'
 import Section from '../common/Section'
+import { type TodoItem } from '../../common/types'
 import { createHashRouteHandler } from '../../common/utils'
 import { useAppDispatch } from '../../store/hooks'
 import { actions } from '../../store/todoList'
-
-const initialFormValues: TodoFormData = {
-  title: '',
-  detail: '',
-  priority: 2,
-}
 
 const StyledSection = styled(Section)`
 padding: 30px;
@@ -22,13 +17,17 @@ padding: 30px;
   margin: 32px 0 0 0;
 }
 
-.add-todo-error {
+.update-todo-error {
   color: firebrick;
   text-align: center;
 }
 `
 
-const AddTodoForm = () => {
+const EditTodoForm = (props: { todoItem: TodoItem }) => {
+  const {
+    todoItem,
+  } = props
+
   const mounted = useRef(false)
 
   const [error, setError] = useState(false)
@@ -45,7 +44,7 @@ const AddTodoForm = () => {
   const handleSubmit = (values: TodoFormData, formik: FormikHelpers<TodoFormData>) => {
     setError(false)
 
-    axios.post('/todo_item', values)
+    axios.patch(`/todo_item/${todoItem.id}`, values)
       .then(() => {
         if (!mounted.current) return
 
@@ -64,17 +63,21 @@ const AddTodoForm = () => {
   return (
     <StyledSection>
       <div className={clsx('font-size-4', 'font-weight-2')}>
-        Create Todo
+        Edit Todo
       </div>
       <Formik
-        initialValues={initialFormValues}
+        initialValues={{
+          title: todoItem.title,
+          detail: todoItem.detail || '',
+          priority: todoItem.priority,
+        }}
         validationSchema={todoFormSchema}
         onSubmit={handleSubmit}
         children={TodoForm}
       />
-      {error && <div className='add-todo-error'>Failed to create todo. Please try again.</div>}
+      {error && <div className='update-todo-error'>Failed to update todo. Please try again.</div>}
     </StyledSection>
   )
 }
 
-export default AddTodoForm
+export default EditTodoForm
