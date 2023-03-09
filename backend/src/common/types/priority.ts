@@ -13,15 +13,15 @@ interface PriorityBrand {
 
 export type Priority = Int & PriorityBrand;
 
-export const Critical: Priority = 1 as Priority;
+export const Critical: Priority = 3 as Priority;
 export const Normal: Priority = 2 as Priority;
-export const Low: Priority = 3 as Priority;
+export const Low: Priority = 1 as Priority;
 
-export const PriorityEnum = [Critical, Normal, Low] as const;
+export const PriorityEnum = [Low, Normal, Critical] as const;
 
 // Priority type guard.
 export function isPriority(v: unknown): v is Priority {
-  return pipe(v, isIntRangeIncluding(Critical, Low));
+  return pipe(v, isIntRangeIncluding(Low, Critical));
 }
 
 // Priority[] type guard.
@@ -35,7 +35,7 @@ export function makePriority(v: unknown): Option<Priority> {
     v,
     makeInt,
     Ochain((i) =>
-      isIntRangeIncluding(Critical, Low)(i) ? some(i as Priority) : none,
+      isIntRangeIncluding(Low, Critical)(i) ? some(i as Priority) : none,
     ),
   );
 }

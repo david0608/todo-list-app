@@ -13,6 +13,10 @@ padding: 20px;
 >*:not(:first-child) {
   margin-top: 10px;
 }
+
+>.sort-bar {
+  margin-top: 20px;
+}
 `
 
 const TodoList = () => {
@@ -23,7 +27,7 @@ const TodoList = () => {
       <Header />
       <StyledSection>
         <FilterBar />
-        <SortBar />
+        <SortBar className='sort-bar'/>
         {
           todoItems.map((item) => <Todo key={item.id} todoItem={item} />)
         }

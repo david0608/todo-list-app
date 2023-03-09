@@ -6,11 +6,11 @@ import type { Priority } from '../../../common/types'
 
 function priorityClass(p: Priority): string {
   switch (p) {
-    case 1:
+    case 3:
       return 'critical'
     case 2:
       return 'normal'
-    case 3:
+    case 1:
       return 'low'
     default:
       return ''
@@ -19,11 +19,11 @@ function priorityClass(p: Priority): string {
 
 function priorityText(p: Priority): string {
   switch (p) {
-    case 1:
+    case 3:
       return 'Critical'
     case 2:
       return 'Normal'
-    case 3:
+    case 1:
       return 'Low'
     default:
       return ''

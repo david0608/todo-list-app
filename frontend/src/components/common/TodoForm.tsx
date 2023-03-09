@@ -17,7 +17,7 @@ export interface TodoFormData {
 export const priorityMenuOptions: { label: string, value: Priority }[] = [
   {
     label: 'Critical',
-    value: 1,
+    value: 3,
   },
   {
     label: 'Normal',
@@ -25,7 +25,7 @@ export const priorityMenuOptions: { label: string, value: Priority }[] = [
   },
   {
     label: 'Low',
-    value: 3,
+    value: 1,
   },
 ]
 

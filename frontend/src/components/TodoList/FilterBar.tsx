@@ -10,11 +10,11 @@ type PriorityStr = 'critical' | 'normal' | 'low' | 'all'
 
 function mapPriorityFilterOptionToStr(option: Priority | undefined): PriorityStr {
   switch (option) {
-    case 1:
+    case 3:
       return 'critical'
     case 2:
       return 'normal'
-    case 3:
+    case 1:
       return 'low'
     default:
       return 'all'
@@ -24,11 +24,11 @@ function mapPriorityFilterOptionToStr(option: Priority | undefined): PriorityStr
 function mapPriorityStrToFilterOption(str: PriorityStr): Priority | undefined {
   switch (str) {
     case 'critical':
-      return 1
+      return 3
     case 'normal':
       return 2
     case 'low':
-      return 3
+      return 1
     default:
       return undefined
   }

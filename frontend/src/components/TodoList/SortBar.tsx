@@ -37,7 +37,15 @@ align-items: center;
 }
 `
 
-const SortBar = () => {
+interface SortBarProps {
+  className?: string
+}
+
+const SortBar: React.FC<SortBarProps> = (props) => {
+  const {
+    className,
+  } = props
+
   const filterOptions = useAppSelector(state => state.todoList.filterOptions)
   const dispatch = useAppDispatch()
 
@@ -46,7 +54,7 @@ const SortBar = () => {
   }
 
   return (
-    <StyledDiv className={clsx('font-size-1', 'font-color-gray')}>
+    <StyledDiv className={clsx('font-size-1', 'font-color-gray', className)}>
       <div className='done-status-label'>
         Done status
       </div>

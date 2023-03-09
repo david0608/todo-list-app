@@ -16,7 +16,7 @@ z-index: 1000;
   top: 0;
   left: 0;
   height: inherit;
-  width: 100%;
+  width: 100vw;
   background-color: deepskyblue;
 
   >.header-content {
@@ -32,7 +32,10 @@ z-index: 1000;
     >.add-todo-button {
       margin-left: auto;
       background-color: transparent;
-      font-size: 30px;
+
+      .MuiSvgIcon-root {
+        font-size: 35px;
+      }
     }
   }
 }
