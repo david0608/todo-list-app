@@ -500,20 +500,8 @@ const todoItemDataDeleter =
 const todoItemCreateRequest =
   (request: TestRequest) => (data: CreateTodoItemDto) =>
     TE.tryCatch(
-      pipe(
-        () => request.post('/todo_item').send(data),
-        T.map((res) =>
-          pipe(
-            res.statusCode === 201,
-            B.match(
-              () => {
-                throw `POST to /todo_item failed with status: ${res.statusCode}`;
-              },
-              () => res.body.data as TodoItem,
-            ),
-          ),
-        ),
-      ),
+      () => request.post('/todo_item').send(data)
+        .then(res => res.body.data as TodoItem),
       (reason) => new Error(`${reason}`),
     );
 

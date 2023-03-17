@@ -3,9 +3,10 @@ import styled from 'styled-components'
 import clsx from 'clsx'
 import { Formik, FormikHelpers } from 'formik'
 import axios from 'axios'
+import * as O from 'fp-ts/Option'
 import TodoForm, { todoFormSchema, type TodoFormData } from '../common/TodoForm'
 import Section from '../common/Section'
-import { type TodoItem } from '../../common/types'
+import { type TodoItem, type RequestError, tryMakeRequestError, errorMessages } from '../../common/types'
 import { createHashRouteHandler } from '../../common/utils'
 import { useAppDispatch } from '../../store/hooks'
 import { actions } from '../../store/todoList'
@@ -30,7 +31,7 @@ const EditTodoForm = (props: { todoItem: TodoItem }) => {
 
   const mounted = useRef(false)
 
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<O.Option<RequestError>>(O.none)
 
   const dispatch = useAppDispatch()
 
@@ -42,7 +43,7 @@ const EditTodoForm = (props: { todoItem: TodoItem }) => {
   const handleRedirect = createHashRouteHandler('/')
 
   const handleSubmit = (values: TodoFormData, formik: FormikHelpers<TodoFormData>) => {
-    setError(false)
+    setError(O.none)
 
     axios.patch(`/todo_item/${todoItem.id}`, values)
       .then(() => {
@@ -55,7 +56,7 @@ const EditTodoForm = (props: { todoItem: TodoItem }) => {
         console.error(err)
         if (!mounted.current) return
 
-        setError(true)
+        setError(tryMakeRequestError(err))
         formik.setSubmitting(false)
       })
   }
@@ -75,7 +76,12 @@ const EditTodoForm = (props: { todoItem: TodoItem }) => {
         onSubmit={handleSubmit}
         children={TodoForm}
       />
-      {error && <div className='update-todo-error'>Failed to update todo. Please try again.</div>}
+      {
+        O.isSome(error) &&
+        <div className='update-todo-error'>
+          {errorMessages(error.value).map(m => <React.Fragment key={m}>{m}<br /></React.Fragment>)}
+        </div>
+      }
     </StyledSection>
   )
 }
