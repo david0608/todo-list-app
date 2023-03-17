@@ -2,6 +2,7 @@ export * from './boolean'
 export * from './date'
 export * from './number'
 export * from './priority'
+export * from './requestError'
 export * from './string'
 export * from './todoItem'
 
